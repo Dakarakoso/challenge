@@ -21,3 +21,7 @@ output "alb_sg_id" {
 output "alb_target_group_arn" {
   value = aws_alb_target_group.main.arn
 }
+
+output "db_subnet_group" {
+  value = aws_db_subnet_group.db.name
+}

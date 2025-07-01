@@ -159,3 +159,11 @@ resource "aws_security_group" "alb" {
     Name = "crm-alb-sg"
   }
 }
+
+resource "aws_db_subnet_group" "db" {
+  name       = "crm-db-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
+  tags = {
+    Name = "crm-db-subnet-group"
+  }
+}
