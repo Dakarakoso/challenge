@@ -46,6 +46,25 @@ resource "aws_security_group" "db" {
   }
 }
 
+resource "aws_kms_key" "main" {
+  description             = "KMS key for CRM encryption"
+  enable_key_rotation     = true
+  deletion_window_in_days = 30
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::${var.account_id}:root"
+        },
+        Action = "kms:*",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "ecs_exec" {
   name = "crm-ecs-exec-role"
 

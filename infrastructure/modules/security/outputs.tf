@@ -6,6 +6,10 @@ output "db_sg_id" {
   value = aws_security_group.db.id
 }
 
+output "kms_key_arn" {
+  value = aws_kms_key.main.arn
+}
+
 output "ecs_exec_role_arn" {
   value = aws_iam_role.ecs_exec.arn
 }
