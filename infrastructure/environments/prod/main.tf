@@ -95,3 +95,13 @@ module "ci_cd" {
   account_id = var.account_id
   region = var.region
 }
+
+
+module "edge" {
+  source = "../../modules/edge"
+  
+  domain_name          = var.domain_name
+  alb_dns_name         = module.networking.alb_dns_name
+  acm_certificate_arn  = var.acm_certificate_arn
+  waf_acl_arn          = module.security.waf_acl_arn
+}
