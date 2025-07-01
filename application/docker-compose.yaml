@@ -1,0 +1,32 @@
+# docker-compose.yml
+version: "3.8"
+services:
+  twenty-server:
+    image: twentyhq/twenty-server:latest
+    environment:
+      - APP_SECRET=${APP_SECRET}
+      - SERVER_URL=${SERVER_URL}
+      - PGPASSWORD_SUPERUSER=${PGPASSWORD_SUPERUSER}
+    volumes:
+      - twenty-data:/app/storage
+    depends_on:
+      - postgres
+
+  twenty-worker:
+    image: twentyhq/twenty-worker:latest
+    environment:
+      - APP_SECRET=${APP_SECRET}
+      - PGPASSWORD_SUPERUSER=${PGPASSWORD_SUPERUSER}
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_PASSWORD=${PGPASSWORD_SUPERUSER}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  twenty-data:
+  postgres-data:
