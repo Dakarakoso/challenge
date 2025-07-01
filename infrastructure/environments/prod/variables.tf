@@ -60,7 +60,15 @@ variable "pgpassword_value" {
   sensitive = true
 }
 
+variable "app_secret_value" {
+  description = "Database superuser password"
+  type = string
+  sensitive = true
+}
+
 variable "pgpassword_secret_arn" {
     description = "value"
 }
-
+variable "app_secret_arn" {
+    description = "value"
+}

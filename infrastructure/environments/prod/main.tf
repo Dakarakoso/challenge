@@ -16,7 +16,9 @@ module "security" {
   s3_bucket_name  = module.storage.s3_bucket_name
   account_id = var.account_id
   pgpassword_value = var.pgpassword_value
+  app_secret_value = var.app_secret_value
   pgpassword_secret_arn = var.pgpassword_secret_arn
+  app_secret_arn = var.app_secret_arn
 }
 
 module "database" {
@@ -46,7 +48,7 @@ module "compute" {
   server_url            = "https://${var.domain_name}"
   db_endpoint           = module.database.db_endpoint
   db_name               = module.database.db_name
-  db_username           = module.database.db_username
+  db_username           = var.db_username
   s3_bucket_name        = module.storage.s3_bucket_name
   app_secret_arn        = module.security.app_secret_arn
   pgpassword_secret_arn = module.security.pgpassword_secret_arn
@@ -58,4 +60,15 @@ module "storage" {
 
   bucket_name = "crm-attachments-${var.account_id}"
   kms_key_arn = module.security.kms_key_arn
+}
+
+module "ci_cd" {
+  source = "../../modules/ci_cd"
+  repository_name = "crm-app"
+  build_project_name = "crm-build"
+  pipeline_name = "crm-deployment"
+  ecs_cluster_name = module.compute.cluster_name
+  ecs_service_name = module.compute.server_service_name
+  account_id = var.account_id
+  region = var.region
 }
