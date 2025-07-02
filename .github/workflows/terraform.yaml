@@ -17,16 +17,17 @@ jobs:
           terraform_version: 1.8.2
 
       - name: Terraform Format
-        run: terraform fmt -check -recursive
+        run: terraform fmt -check -recursive -chdir=infrastructure/environments/prod
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform -chdir=infrastructure/environments/prod init
 
       - name: Terraform Validate
-        run: terraform validate
+        run: terraform -chdir=infrastructure/environments/prod validate
 
       - name: Terraform Plan
-        run: terraform plan -input=false \
+        run:
+          terraform -chdir=infrastructure/environments/prod plan -input=false \
           -var="pgpassword_secret_arn=dummy-arn" \
           -var="app_secret_arn=dummy-arn" \
           -var="access_key=mock-access-key" \

@@ -1,3 +1,3 @@
 # challenge
 
-![Terraform CI](https://github.com/dakarakoso/challenge/actions/workflows/terraform.yml/badge.svg)
+![Terraform CI](https://github.com/Dakarakoso/challenge/actions/workflows/terraform.yaml/badge.svg)
