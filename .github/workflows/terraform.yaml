@@ -17,7 +17,7 @@ jobs:
           terraform_version: 1.8.2
 
       - name: Terraform Format
-        run: terraform fmt -check -recursive -chdir=infrastructure/environments/prod
+        run: terraform fmt -check -recursive infrastructure/environments/prod
 
       - name: Terraform Init
         run: terraform -chdir=infrastructure/environments/prod init
