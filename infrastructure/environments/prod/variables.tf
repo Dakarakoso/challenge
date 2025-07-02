@@ -68,12 +68,25 @@ variable "app_secret_value" {
 
 variable "pgpassword_secret_arn" {
     description = "value"
+    default = "dummy-arn"
 }
 variable "app_secret_arn" {
+    type = string
     description = "value"
+    default = "dummy-arn"
 }
 
 variable "alarm_email" {
   description = "Email for alarm notifications"
   type  = string
+}
+
+variable "access_key" {
+  type = string
+  default = "mock_access_key"
+}
+
+variable "secret_key" {
+  type = string
+  default = "mock_secret_key"
 }

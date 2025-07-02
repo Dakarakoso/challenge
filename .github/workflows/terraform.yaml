@@ -26,4 +26,8 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -input=false \
+          -var="pgpassword_secret_arn=dummy-arn" \
+          -var="app_secret_arn=dummy-arn" \
+          -var="access_key=mock-access-key" \
+          -var="secret_key=mock-secret-key"
