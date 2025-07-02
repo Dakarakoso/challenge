@@ -73,3 +73,12 @@ resource "aws_sns_topic_subscription" "email" {
   protocol = "email"
   endpoint = var.alarm_email
 }
+
+resource "aws_cloudwatch_log_group" "flow_logs" {
+  name              = "/aws/vpc/flow-logs"
+  retention_in_days = 14
+
+  tags = {
+    Name = "crm-flow-logs"
+  }
+}

@@ -29,6 +29,9 @@ module "networking" {
     private_subnets = var.private_subnets
     azs = var.azs
     acm_certificate_arn = var.acm_certificate_arn
+    vpc_flow_logs_role_arn = module.security.vpc_flow_logs_role_arn
+    log_group_arn = module.monitoring.flow_logs_log_group_arn
+
 }
 
 module "security" {

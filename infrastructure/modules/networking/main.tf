@@ -167,3 +167,14 @@ resource "aws_db_subnet_group" "db" {
     Name = "crm-db-subnet-group"
   }
 }
+
+resource "aws_flow_log" "vpc" {
+  log_destination      = var.log_group_arn
+  traffic_type         = "ALL"
+  vpc_id               = aws_vpc.main.id
+  iam_role_arn         = var.vpc_flow_logs_role_arn
+
+  tags = {
+    Name = "crm-vpc-flow-log"
+  }
+}

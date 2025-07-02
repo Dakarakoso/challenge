@@ -29,3 +29,7 @@ output "app_secret_arn" {
 output "waf_acl_arn" {
   value = aws_wafv2_web_acl.crm.arn
 }
+output "vpc_flow_logs_role_arn" {
+  description = "IAM role ARN for VPC Flow Logs"
+  value       = aws_iam_role.vpc_flow_logs.arn
+}
