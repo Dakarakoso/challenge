@@ -72,3 +72,8 @@ variable "pgpassword_secret_arn" {
 variable "app_secret_arn" {
     description = "value"
 }
+
+variable "alarm_email" {
+  description = "Email for alarm notifications"
+  type  = string
+}

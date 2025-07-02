@@ -37,6 +37,7 @@ resource "aws_ecs_task_definition" "server" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
+        "awslogs-group" = var.cloudwatch_log_group
         "awslogs-region"        = var.region
         "awslogs-stream-prefix" = "ecs-server"
       }
@@ -70,6 +71,7 @@ resource "aws_ecs_task_definition" "worker" {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
+        "awslogs-group" = var.cloudwatch_log_group
         "awslogs-region" = var.region
         "awslogs-stream-prefix" = "ecs-worker"
       }
@@ -136,4 +138,10 @@ resource "aws_appautoscaling_policy" "server_scale_cpu" {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
   }
+}
+
+resource "aws_cloudwatch_log_group" "main" {
+  name              = var.cloudwatch_log_group
+  retention_in_days = 30
+  kms_key_id        = var.kms_key_arn
 }

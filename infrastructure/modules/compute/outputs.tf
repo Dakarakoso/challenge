@@ -9,3 +9,7 @@ output "server_service_name" {
 output "worker_service_name" {
   value = aws_ecs_service.worker.name
 }
+
+output "log_group_name" {
+  value = aws_cloudwatch_log_group.main.name
+}

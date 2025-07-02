@@ -136,3 +136,8 @@ variable "server_max_capacity" {
   type = number
   default = 10
 }
+
+variable "cloudwatch_log_group" {
+  description = "CloudWatch log group name"
+  type = string
+}

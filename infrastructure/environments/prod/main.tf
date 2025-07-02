@@ -67,6 +67,7 @@ module "compute" {
   private_subnets       = module.networking.private_subnets
   ecs_security_group_id = module.security.ecs_sg_id
   alb_target_group_arn  = module.networking.alb_target_group_arn
+  cloudwatch_log_group = "/ecs/crm-app"
   region                = var.region
   server_url            = "https://${var.domain_name}"
   db_endpoint           = module.database.db_endpoint
@@ -104,4 +105,13 @@ module "edge" {
   alb_dns_name         = module.networking.alb_dns_name
   acm_certificate_arn  = var.acm_certificate_arn
   waf_acl_arn          = module.security.waf_acl_arn
+}
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+  ecs_cluster_name  = module.compute.cluster_name
+  ecs_service_name  = module.compute.server_service_name
+  db_instance_id    = module.database.db_instance_id
+  alb_arn_suffix    = split("/", module.networking.alb_target_group_arn)[1]
+  alarm_email       = var.alarm_email
 }
