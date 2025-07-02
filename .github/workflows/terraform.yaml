@@ -26,9 +26,4 @@ jobs:
         run: terraform -chdir=infrastructure/environments/prod validate
 
       - name: Terraform Plan
-        run:
-          terraform -chdir=infrastructure/environments/prod plan -input=false \
-          -var="pgpassword_secret_arn=dummy-arn" \
-          -var="app_secret_arn=dummy-arn" \
-          -var="access_key=mock-access-key" \
-          -var="secret_key=mock-secret-key"
+        run: terraform -chdir=infrastructure/environments/prod plan -input=false -var="pgpassword_secret_arn=dummy-arn" -var="app_secret_arn=dummy-arn" -var="access_key=mock-access-key" -var="secret_key=mock-secret-key"
