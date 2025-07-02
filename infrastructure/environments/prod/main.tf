@@ -16,57 +16,57 @@ terraform {
 }
 
 provider "aws" {
-  region  = var.region
+  region = var.region
   # profile = "twentyhq"
-  access_key = "mock_access_key"
-  secret_key = "mock_secret_key"
+  access_key                  = "mock_access_key"
+  secret_key                  = "mock_secret_key"
   skip_credentials_validation = true
-  skip_metadata_api_check = true
+  skip_metadata_api_check     = true
   skip_requesting_account_id  = true
 }
 
 
 module "networking" {
-    source = "../../modules/networking"
+  source = "../../modules/networking"
 
-    vpc_cidr = var.vpc_cidr
-    public_subnets = var.public_subnets
-    private_subnets = var.private_subnets
-    azs = var.azs
-    acm_certificate_arn = var.acm_certificate_arn
-    vpc_flow_logs_role_arn = module.security.vpc_flow_logs_role_arn
-    log_group_arn = module.monitoring.flow_logs_log_group_arn
+  vpc_cidr               = var.vpc_cidr
+  public_subnets         = var.public_subnets
+  private_subnets        = var.private_subnets
+  azs                    = var.azs
+  acm_certificate_arn    = var.acm_certificate_arn
+  vpc_flow_logs_role_arn = module.security.vpc_flow_logs_role_arn
+  log_group_arn          = module.monitoring.flow_logs_log_group_arn
 
 }
 
 module "security" {
   source = "../../modules/security"
-  
-  vpc_id = module.networking.vpc_id
-  alb_sg_id = module.networking.alb_sg_id
-  s3_bucket_name  = module.storage.s3_bucket_name
-  account_id = var.account_id
-  pgpassword_value = var.pgpassword_value
-  app_secret_value = var.app_secret_value
+
+  vpc_id                = module.networking.vpc_id
+  alb_sg_id             = module.networking.alb_sg_id
+  s3_bucket_name        = module.storage.s3_bucket_name
+  account_id            = var.account_id
+  pgpassword_value      = var.pgpassword_value
+  app_secret_value      = var.app_secret_value
   pgpassword_secret_arn = var.pgpassword_secret_arn
-  app_secret_arn = var.app_secret_arn
+  app_secret_arn        = var.app_secret_arn
 }
 
 module "database" {
   source = "../../modules/database"
-  
+
   db_subnet_group = module.networking.db_subnet_group
-  db_sg_id = module.security.db_sg_id
-  db_name = var.db_name
-  db_username = var.db_username
-  db_password  = var.db_password
-  kms_key_arn = module.security.kms_key_arn
-  db_subnets = module.networking.private_subnets
+  db_sg_id        = module.security.db_sg_id
+  db_name         = var.db_name
+  db_username     = var.db_username
+  db_password     = var.db_password
+  kms_key_arn     = module.security.kms_key_arn
+  db_subnets      = module.networking.private_subnets
 }
 
 module "compute" {
   source = "../../modules/compute"
-  
+
   cluster_name          = "crm-cluster"
   execution_role_arn    = module.security.ecs_exec_role_arn
   task_role_arn         = module.security.ecs_task_role_arn
@@ -75,7 +75,7 @@ module "compute" {
   private_subnets       = module.networking.private_subnets
   ecs_security_group_id = module.security.ecs_sg_id
   alb_target_group_arn  = module.networking.alb_target_group_arn
-  cloudwatch_log_group = "/ecs/crm-app"
+  cloudwatch_log_group  = "/ecs/crm-app"
   region                = var.region
   server_url            = "https://${var.domain_name}"
   db_endpoint           = module.database.db_endpoint
@@ -95,31 +95,31 @@ module "storage" {
 }
 
 module "ci_cd" {
-  source = "../../modules/ci_cd"
-  repository_name = "crm-app"
+  source             = "../../modules/ci_cd"
+  repository_name    = "crm-app"
   build_project_name = "crm-build"
-  pipeline_name = "crm-deployment"
-  ecs_cluster_name = module.compute.cluster_name
-  ecs_service_name = module.compute.server_service_name
-  account_id = var.account_id
-  region = var.region
+  pipeline_name      = "crm-deployment"
+  ecs_cluster_name   = module.compute.cluster_name
+  ecs_service_name   = module.compute.server_service_name
+  account_id         = var.account_id
+  region             = var.region
 }
 
 
 module "edge" {
   source = "../../modules/edge"
-  
-  domain_name          = var.domain_name
-  alb_dns_name         = module.networking.alb_dns_name
-  acm_certificate_arn  = var.acm_certificate_arn
-  waf_acl_arn          = module.security.waf_acl_arn
+
+  domain_name         = var.domain_name
+  alb_dns_name        = module.networking.alb_dns_name
+  acm_certificate_arn = var.acm_certificate_arn
+  waf_acl_arn         = module.security.waf_acl_arn
 }
 
 module "monitoring" {
-  source = "../../modules/monitoring"
-  ecs_cluster_name  = module.compute.cluster_name
-  ecs_service_name  = module.compute.server_service_name
-  db_instance_id    = module.database.db_instance_id
-  alb_arn_suffix    = split("/", module.networking.alb_target_group_arn)[1]
-  alarm_email       = var.alarm_email
+  source           = "../../modules/monitoring"
+  ecs_cluster_name = module.compute.cluster_name
+  ecs_service_name = module.compute.server_service_name
+  db_instance_id   = module.database.db_instance_id
+  alb_arn_suffix   = split("/", module.networking.alb_target_group_arn)[1]
+  alarm_email      = var.alarm_email
 }

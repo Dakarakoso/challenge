@@ -1,10 +1,10 @@
 resource "aws_codecommit_repository" "crm" {
   repository_name = var.repository_name
-  description = "CRM application repository"
+  description     = "CRM application repository"
 }
 
 resource "aws_ecr_repository" "server" {
-  name = "twenty-server"
+  name                 = "twenty-server"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -13,7 +13,7 @@ resource "aws_ecr_repository" "server" {
 }
 
 resource "aws_ecr_repository" "worker" {
-  name = "twenty-worker"
+  name                 = "twenty-worker"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -22,8 +22,8 @@ resource "aws_ecr_repository" "worker" {
 }
 
 resource "aws_codebuild_project" "build" {
-  name = var.build_project_name
-  description = "CRM build project"
+  name         = var.build_project_name
+  description  = "CRM build project"
   service_role = aws_iam_role.codebuild.arn
 
   artifacts {
@@ -31,52 +31,52 @@ resource "aws_codebuild_project" "build" {
   }
 
   environment {
-    type = "LINUX_CONTAINER"
-    image = "aws/codebuild/standard:6.0"
-    compute_type = "BUILD_GENERAL1_MEDIUM"
-    privileged_mode = true
+    type                        = "LINUX_CONTAINER"
+    image                       = "aws/codebuild/standard:6.0"
+    compute_type                = "BUILD_GENERAL1_MEDIUM"
+    privileged_mode             = true
     image_pull_credentials_type = "CODEBUILD"
 
     environment_variable {
-      name = "AWS_ACCOUNT_ID"
+      name  = "AWS_ACCOUNT_ID"
       value = var.account_id
     }
-    
+
     environment_variable {
-      name = "AWS_DEFAULT_REGION"
+      name  = "AWS_DEFAULT_REGION"
       value = var.region
     }
   }
 
   source {
-    type = "CODEPIPELINE"
+    type      = "CODEPIPELINE"
     buildspec = file("${path.module}/buildspec.yaml")
   }
 }
 
 resource "aws_codepipeline" "crm" {
-  name = var.pipeline_name
+  name     = var.pipeline_name
   role_arn = aws_iam_role.codepipeline.arn
 
   artifact_store {
     location = aws_s3_bucket.artifacts.bucket
-    type = "S3"
+    type     = "S3"
   }
 
   stage {
     name = "Source"
 
     action {
-      name = "Source"
-      category = "Source"
-      owner = "AWS"
-      provider = "CodeCommit"
-      version = "1"
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeCommit"
+      version          = "1"
       output_artifacts = ["source_output"]
 
       configuration = {
         RepositoryName = aws_codecommit_repository.crm.repository_name
-        BranchName = "main"
+        BranchName     = "main"
       }
     }
   }
@@ -85,13 +85,13 @@ resource "aws_codepipeline" "crm" {
     name = "Build"
 
     action {
-      name  = "Build"
-      category = "Build"
-      owner = "AWS"
-      provider = "CodeBuild"
-      input_artifacts = ["source_output"]
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
       output_artifacts = ["build_output"]
-      version = "1"
+      version          = "1"
 
       configuration = {
         ProjectName = aws_codebuild_project.build.name
@@ -103,30 +103,30 @@ resource "aws_codepipeline" "crm" {
     name = "Deploy"
 
     action {
-      name = "Deploy"
-      category = "Deploy"
-      owner = "AWS"
-      provider = "ECS"
+      name            = "Deploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
       input_artifacts = ["build_output"]
-      version = "1"
+      version         = "1"
 
       configuration = {
         ClusterName = var.ecs_cluster_name
         ServiceName = var.ecs_service_name
-        FileName = "imagedefinitions.json"
+        FileName    = "imagedefinitions.json"
       }
     }
   }
 }
 
 resource "aws_s3_bucket" "artifacts" {
-  bucket = "${var.pipeline_name}-artifacts"
+  bucket        = "${var.pipeline_name}-artifacts"
   force_destroy = true
 }
 
 resource "aws_s3_bucket_acl" "artifacts" {
   bucket = aws_s3_bucket.artifacts.id
-  acl = "private"
+  acl    = "private"
 }
 
 resource "aws_iam_role" "codebuild" {
@@ -252,8 +252,8 @@ resource "aws_iam_role_policy" "codepipeline" {
         Resource = "*"
       },
       {
-        Effect = "Allow",
-        Action = "iam:PassRole",
+        Effect   = "Allow",
+        Action   = "iam:PassRole",
         Resource = "*"
       }
     ]

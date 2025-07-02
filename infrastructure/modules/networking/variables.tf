@@ -25,7 +25,7 @@ variable "acm_certificate_arn" {
 
 variable "log_group_arn" {
   description = "CloudWatch Log Group ARN for VPC Flow Logs"
-  type = string
+  type        = string
 }
 
 variable "vpc_flow_logs_role_arn" {

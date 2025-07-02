@@ -58,7 +58,7 @@ resource "aws_kms_key" "main" {
         Principal = {
           AWS = "arn:aws:iam::${var.account_id}:root"
         },
-        Action = "kms:*",
+        Action   = "kms:*",
         Resource = "*"
       }
     ]
@@ -140,29 +140,29 @@ resource "aws_iam_policy" "ecs_task" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task" {
-  role = aws_iam_role.ecs_task.name
+  role       = aws_iam_role.ecs_task.name
   policy_arn = aws_iam_policy.ecs_task.arn
 }
 
 resource "aws_secretsmanager_secret" "pgpassword" {
-  name = "crm-db-password"
+  name        = "crm-db-password"
   description = "Database password for CRM"
   kms_key_id  = aws_kms_key.main.key_id
 }
 
 resource "aws_secretsmanager_secret" "app_secret" {
-  name = "crm-app-secret"
+  name        = "crm-app-secret"
   description = "Application secret for CRM"
   kms_key_id  = aws_kms_key.main.key_id
 }
 
 resource "aws_secretsmanager_secret_version" "app_secret" {
-  secret_id  = aws_secretsmanager_secret.app_secret.id
+  secret_id     = aws_secretsmanager_secret.app_secret.id
   secret_string = var.app_secret_value
 }
 
 resource "aws_secretsmanager_secret_version" "pgpassword" {
-  secret_id = aws_secretsmanager_secret.pgpassword.id
+  secret_id     = aws_secretsmanager_secret.pgpassword.id
   secret_string = var.pgpassword_value
 }
 
