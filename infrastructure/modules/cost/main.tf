@@ -81,7 +81,7 @@ resource "aws_cloudwatch_event_target" "cost_anomaly_to_sns" {
 
 data "aws_iam_policy_document" "events_to_sns" {
   statement {
-    effect    = "Allow"
+    effect = "Allow"
     principals {
       type        = "Service"
       identifiers = ["events.amazonaws.com"]
