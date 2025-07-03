@@ -157,7 +157,7 @@ Runs app on ECS Fargate with autoscaling and monitoring:
 - ECS Cluster (aws_ecs_cluster.main) named “crm-cluster,” Container Insights enabled.
 - Task Definitions for twenty-server (512 CPU, 1 GB RAM) and twenty-worker (256 CPU, 512 MB RAM).
 - ECS Services:
-  - twenty-server: Desired count 2, behind your ALB, CodeDeploy controller.
+  - twenty-server: Desired count 2, behind ALB, CodeDeploy controller.
   - twenty-worker: Desired count 1, internal tasks-only.
 - Autoscaling: TargetTracking on CPU (70%) for twenty-server.
 - CloudWatch Log Group for ECS logs with 30-day retention.
@@ -173,7 +173,7 @@ Manages PostgreSQL RDS instance:
   - Backup window 03:00–06:00, retention 7 days, skip final snapshot on delete.
 - Credentials stored in Secrets Manager.
 - DB Parameter Group customizing slow‐query logging.
-- DB Subnet Group spanning your two private subnets.
+- DB Subnet Group spanning two private subnets.
 
 ---
 
@@ -182,7 +182,7 @@ Manages PostgreSQL RDS instance:
 Delivers public UI with low latency and DNS:
 
 - CloudFront Distribution:
-  - Origin = your ALB over HTTPS only, TLS 1.2_2021, PriceClass_100.
+  - Origin = ALB over HTTPS only, TLS 1.2_2021, PriceClass_100.
   - Default TTL 1 hour, compress responses, forward all headers/cookies/queries.
 - Route 53 Hosted Zone & Record for crm.example.com pointing at the distribution.
 
@@ -217,7 +217,7 @@ Foundation for connectivity and security at the VPC level:
 
 ## Security
 
-IAM, encryption, and WAF to protect your data and app:
+IAM, encryption, and WAF to protect data and app:
 
 - IAM Roles & Policies:
 - ECS Exec & Task roles, VPC Flow Logs role, Backup role.
