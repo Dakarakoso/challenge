@@ -1,7 +1,8 @@
-resource "aws_codecommit_repository" "crm" {
-  repository_name = var.repository_name
-  description     = "CRM application repository"
+resource "aws_codestarconnections_connection" "github" {
+  name          = "crm-github-connection"
+  provider_type = "GitHub"
 }
+
 
 resource "aws_ecr_repository" "server" {
   name                 = "twenty-server"
@@ -67,16 +68,18 @@ resource "aws_codepipeline" "crm" {
     name = "Source"
 
     action {
-      name             = "Source"
+      name             = "GitHub_Source"
       category         = "Source"
       owner            = "AWS"
-      provider         = "CodeCommit"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["source_output"]
 
       configuration = {
-        RepositoryName = aws_codecommit_repository.crm.repository_name
-        BranchName     = "main"
+        ConnectionArn    = aws_codestarconnections_connection.github.arn
+        FullRepositoryId = "Dakarakoso/challenge"
+        BranchName       = "main"
+        DetectChanges    = "true"
       }
     }
   }
@@ -223,15 +226,9 @@ resource "aws_iam_role_policy" "codepipeline" {
         ]
       },
       {
-        Effect = "Allow",
-        Action = [
-          "codecommit:GetBranch",
-          "codecommit:GetCommit",
-          "codecommit:UploadArchive",
-          "codecommit:GetUploadArchiveStatus",
-          "codecommit:CancelUploadArchive"
-        ],
-        Resource = aws_codecommit_repository.crm.arn
+        Effect   = "Allow",
+        Action   = "codestar-connections:UseConnection",
+        Resource = aws_codestarconnections_connection.github.arn
       },
       {
         Effect = "Allow",
