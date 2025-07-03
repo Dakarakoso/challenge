@@ -22,32 +22,32 @@ Below is a high-level view of the AWS infrastructure:
 ```mermaid
 graph TD
   %% CI/CD Pipeline
-  subgraph CI/CD
-    GH[GitHub Repo] --> CSC[CodeStar Connection]
+  subgraph CI_CD
+    GH[GitHub_Repo] --> CSC[CodeStar_Connection]
     CSC --> CP[CodePipeline]
     CP --> CB[CodeBuild]
-    CB --> ECR[ECR server & worker]
-    CP --> CD[CodeDeploy]
+    CB --> ECR[ECR_server_worker]
+    CP --> CD[CodeDeploy_Blue_Green_AutoRollback_on_Alarm]
   end
 
   %% Edge / DNS
   subgraph Global
-    R53[Route 53] --> CF[CloudFront]
+    R53[Route_53] --> CF[CloudFront]
   end
 
   %% Core Region (ap-northeast-1)
-  subgraph "AWS Region: ap-northeast-1"
-    subgraph VPC["VPC 10.0.0.0/16"]
+  subgraph AWS_Region_ap_northeast_1
+    subgraph VPC_10_0_0_0_16
       subgraph Public_Subnets
-        IGW[Internet Gateway]
-        NAT[NAT Gateway]
+        IGW[Internet_Gateway]
+        NAT[NAT_Gateway]
         IGW <--> NAT
-        ALB[Application Load Balancer] --> ECS_Public[ECS Cluster Fargate]
+        ALB[Application_Load_Balancer] --> ECS_Public[ECS_Cluster_Fargate]
       end
 
       subgraph Private_Subnets
-        ECS_Private[ECS Cluster Fargate] --> RDS[RDS PostgreSQL]
-        ECS_Private --> S3[S3 Attachments]
+        ECS_Private[ECS_Cluster_Fargate] --> RDS[RDS_PostgreSQL]
+        ECS_Private --> S3[S3_Attachments]
         ECS_Private --> NAT
       end
     end
@@ -59,14 +59,16 @@ graph TD
 
   %% Backup & Monitoring
   subgraph Backup
-    AWSB[AWS Backup] --> PV[Primary Vault]
-    PV -.-> DRV[DR Vault]
+    AWSB[AWS_Backup] --> PV[Primary_Vault]
+    PV -.-> DRV[DR_Vault]
     RDS --> AWSB
     S3 --> AWSB
   end
 
   subgraph Monitoring
-    CW[CloudWatch] --> SNS[SNS Alerts]
+    CW[CloudWatch_Alarms] --> SNS[SNS_Alerts]
+    CW --> CD
+    %% CodeDeploy auto-rollback on alarm
     ALB --> CW
     ECS_Public --> CW
     ECS_Private --> CW
@@ -75,13 +77,14 @@ graph TD
 
   %% Security
   subgraph Security
-    IAM[IAM Roles & Policies] -.-> CB
+    IAM[IAM_Roles_Policies] -.-> CB
     IAM -.-> ECS_Public
     IAM -.-> ECS_Private
     IAM -.-> RDS
-    KMS[KMS Key] -.-> S3
-    WAF[WAFv2 Web ACL] --> ALB
+    KMS[KMS_Key] -.-> S3
+    WAF[WAFv2_Web_ACL] --> ALB
   end
+
 
 ```
 
@@ -106,7 +109,9 @@ graph TD
 - monitoring: CloudWatch alarms, SNS topic/subscription
 - backup: AWS Backup plans & vaults
 
----
+### Terraform dependency graph
+
+## ![Terraform Dependency Graph](/imgs/terraform-graph.png)
 
 ## Backup
 

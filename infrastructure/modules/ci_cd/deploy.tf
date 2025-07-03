@@ -49,8 +49,22 @@ resource "aws_codedeploy_deployment_group" "ecs" {
     service_name = var.ecs_service_name
   }
 
+  alarm_configuration {
+    enabled                   = true
+    ignore_poll_alarm_failure = false
+    alarms = [
+      var.alb_alarm_name,
+      var.ecs_cpu_alarm_name,
+      var.ecs_memory_alarm_name,
+      var.rds_cpu_alarm_name,
+    ]
+  }
+
+
   auto_rollback_configuration {
     enabled = true
-    events  = ["DEPLOYMENT_FAILURE"]
+    events = ["DEPLOYMENT_FAILURE",
+      "DEPLOYMENT_STOP_ON_ALARM",
+    ]
   }
 }

@@ -24,6 +24,7 @@ jobs:
       TF_VAR_app_secret_value: ${{ secrets.APP_SECRET_VALUE }}
       TF_VAR_alarm_email: ${{ secrets.ALARM_EMAIL }}
       TF_VAR_dr_region: ${{secrets.DR_REGION}}
+      TF_VAR_pipeline_name: ${{secrets.PIPELINE_NAME}}
 
     steps:
       - uses: actions/checkout@v3

@@ -69,9 +69,9 @@ module "storage" {
 
 module "ci_cd" {
   source                  = "../../modules/ci_cd"
-  repository_name         = "crm-app"
+  repository_name         = "challenge"
   build_project_name      = "crm-build"
-  pipeline_name           = "crm-deployment"
+  pipeline_name           = var.pipeline_name
   ecs_cluster_name        = module.compute.cluster_name
   ecs_service_name        = module.compute.server_service_name
   account_id              = var.account_id
@@ -79,6 +79,11 @@ module "ci_cd" {
   alb_listener_arn        = module.networking.alb_listener_arn
   blue_target_group_name  = module.networking.blue_target_group_name
   green_target_group_name = module.networking.green_target_group_name
+  alb_alarm_name          = module.monitoring.alb_5xx_alarm_name
+  ecs_cpu_alarm_name      = module.monitoring.ecs_cpu_alarm_name
+  ecs_memory_alarm_name   = module.monitoring.ecs_memory_alarm_name
+  rds_cpu_alarm_name      = module.monitoring.rds_cpu_alarm_name
+
 }
 
 
@@ -99,6 +104,7 @@ module "monitoring" {
   alb_arn_suffix   = split("/", module.networking.alb_target_group_arn)[1]
   alarm_email      = var.alarm_email
   prefix           = "crm-prod"
+  pipeline_name    = var.pipeline_name
 }
 
 module "backup" {

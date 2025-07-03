@@ -27,3 +27,8 @@ variable "prefix" {
   description = "Resource name prefix"
   type        = string
 }
+
+variable "pipeline_name" {
+  description = "Pipeline Name"
+  type        = string
+}

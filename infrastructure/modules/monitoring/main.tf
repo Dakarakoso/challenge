@@ -49,7 +49,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
-  alarm_name          = "alb-high-5xx"
+  alarm_name          = "${var.pipeline_name}-alb-5xx"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
   metric_name         = "HTTPCode_Target_5XX_Count"

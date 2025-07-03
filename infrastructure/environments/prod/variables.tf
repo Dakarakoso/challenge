@@ -95,3 +95,8 @@ variable "dr_region" {
   description = "Disaster recovery region"
   type        = string
 }
+
+variable "pipeline_name" {
+  type        = string
+  description = "Name prefix for the CodePipeline and related resources"
+}

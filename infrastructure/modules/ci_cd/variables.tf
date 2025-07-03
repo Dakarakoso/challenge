@@ -44,3 +44,20 @@ variable "blue_target_group_name" {
 variable "green_target_group_name" {
   type = string
 }
+
+variable "alb_alarm_name" {
+  type        = string
+  description = "CloudWatch alarm name for ALB 5XX errors"
+}
+variable "ecs_cpu_alarm_name" {
+  type        = string
+  description = "CloudWatch alarm name for ECS CPU usage"
+}
+variable "ecs_memory_alarm_name" {
+  type        = string
+  description = "CloudWatch alarm name for ECS memory usage"
+}
+variable "rds_cpu_alarm_name" {
+  type        = string
+  description = "CloudWatch alarm name for RDS CPU usage"
+}
