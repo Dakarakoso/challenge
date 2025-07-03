@@ -23,68 +23,75 @@ Below is a high-level view of the AWS infrastructure:
 graph TD
   %% CI/CD Pipeline
   subgraph CI_CD
-    GH[GitHub_Repo] --> CSC[CodeStar_Connection]
+    GH[GitHub Repo] --> CSC[CodeStar Connection]
     CSC --> CP[CodePipeline]
     CP --> CB[CodeBuild]
-    CB --> ECR[ECR_server_worker]
-    CP --> CD[CodeDeploy_Blue_Green_AutoRollback_on_Alarm]
+    CB --> ECR[ECR Server and Worker]
+    CP --> CD[CodeDeploy - Blue/Green Auto-Rollback on Alarm]
   end
 
   %% Edge / DNS
   subgraph Global
-    R53[Route_53] --> CF[CloudFront]
+    R53[Route 53] --> CF[CloudFront]
   end
 
   %% Core Region (ap-northeast-1)
-  subgraph AWS_Region_ap_northeast_1
-    subgraph VPC_10_0_0_0_16
+  subgraph "AWS Region ap-northeast-1"
+    subgraph VPC["VPC 10.0.0.0/16"]
       subgraph Public_Subnets
-        IGW[Internet_Gateway]
-        NAT[NAT_Gateway]
+        IGW[Internet Gateway]
+        NAT[NAT Gateway]
         IGW <--> NAT
-        ALB[Application_Load_Balancer] --> ECS_Public[ECS_Cluster_Fargate]
+        ALB[Application Load Balancer] --> ECS_Public[ECS Cluster Fargate]
       end
 
       subgraph Private_Subnets
-        ECS_Private[ECS_Cluster_Fargate] --> RDS[RDS_PostgreSQL]
-        ECS_Private --> S3[S3_Attachments]
+        ECS_Private[ECS Cluster Fargate] --> RDS_Primary[RDS Primary]
+        ECS_Private --> S3[S3 Attachments]
         ECS_Private --> NAT
       end
     end
 
-    %% Edge & Deploy connections
     CF --> ALB
     CD --> ECS_Public
   end
 
+  %% DR Region (ap-southeast-1)
+  subgraph "DR Region ap-southeast-1"
+    RDS_Replica[RDS Read Replica]
+    RDS_Primary -->|Async Replication| RDS_Replica
+    CW_Event[CloudWatch Events - failover] --> Lambda[Lambda PromoteReplica]
+    Lambda --> RDS_Replica
+    RDS_Replica -->|DNS Update / App Pointing| ECS_Public
+  end
+
   %% Backup & Monitoring
   subgraph Backup
-    AWSB[AWS_Backup] --> PV[Primary_Vault]
-    PV -.-> DRV[DR_Vault]
-    RDS --> AWSB
+    AWSB[AWS Backup] --> PV[Primary Vault]
+    PV -.-> DRV[DR Vault]
+    RDS_Primary --> AWSB
     S3 --> AWSB
   end
 
   subgraph Monitoring
-    CW[CloudWatch_Alarms] --> SNS[SNS_Alerts]
+    CW[CloudWatch Alarms] --> SNS[SNS Alerts]
     CW --> CD
-    %% CodeDeploy auto-rollback on alarm
     ALB --> CW
     ECS_Public --> CW
     ECS_Private --> CW
-    RDS --> CW
+    RDS_Primary --> CW
+    RDS_Replica --> CW
   end
 
   %% Security
   subgraph Security
-    IAM[IAM_Roles_Policies] -.-> CB
+    IAM[IAM Roles & Policies] -.-> CB
     IAM -.-> ECS_Public
     IAM -.-> ECS_Private
-    IAM -.-> RDS
-    KMS[KMS_Key] -.-> S3
-    WAF[WAFv2_Web_ACL] --> ALB
+    IAM -.-> RDS_Primary
+    KMS[KMS Key] -.-> S3
+    WAF[WAFv2 Web ACL] --> ALB
   end
-
 
 ```
 
@@ -113,29 +120,76 @@ graph TD
 
 ## ![Terraform Dependency Graph](/imgs/terraform-graph.png)
 
-## Backup
+## Backup & DR Orchestration
 
-Defines a cross-region backup strategy for RDS and other resources:
+#### Cross-Region Backups
 
-- Backup Plan (aws_backup_plan.cross_region): Daily rule at 03:00 UTC, 35 days retention in primary vault, with a copy to the DR vault after 90 days deletion window .
-- Backup Selection (aws_backup_selection.rds): Includes RDS instance in the plan.
-- Backup Vaults (aws_backup_vault.primary & secondary): “crm-prod-backup-vault” in ap-northeast-1 and DR vault in ap-southeast-1.
-- IAM Role & Policy for AWS Backup service.
+- Backup Plan `aws_backup_plan.cross_region`
+  - Runs daily at 03:00 UTC, retaining each recovery point for 35 days in the primary vault, and then automatically copying it to the DR vault after a 90-day window.
+- Backup Selection `aws_backup_selection.rds`
+  - Includes your primary RDS instance in the plan so that every snapshot is captured.
+- Backup Vaults
+  - Primary Vault `aws_backup_vault.primary`: crm-prod-backup-vault in ap-northeast-1
+- DR Vault `aws_backup_vault.secondary`: crm-prod-backup-vault-dr in ap-southeast-1
+- IAM Role & Policy `aws_iam_role.backup_role` + attachment
+  - Grants AWS Backup service the permissions it needs to snapshot and copy your data.
+
+#### Near-Real-Time Replication
+
+- **Read-Replica** `aws_db_instance.replica`
+  - A cross-region RDS read-replica in ap-southeast-1 that continuously replicates from your primary database, giving you an RPO of near zero for failover scenarios.
+
+#### Automated Failover
+
+- CloudWatch Event Rule `aws_cloudwatch_event_rule.rds_failover`
+  - Listens for RDS “failover” events on your primary instance.
+- Lambda Promotion Function `aws_lambda_function.promote`
+  - Automatically invokes the RDS PromoteReadReplica API on your replica when the event fires, turning it into a standalone primary.
+- IAM Role & Policy
+  - Allows the Lambda function to call `rds:PromoteReadReplica` on the replica ARN.
 
 ### RPO/RTO Considerations
 
-RPO (Recovery Point Objective): up to 24 hrs of data loss (daily backups at 03:00 UTC).
+##### RPO (Recovery Point Objective):
 
-RTO (Recovery Time Objective): depends on DB size, typically minutes to an hour for moderate datasets.
+- Backups: up to 24 hrs of potential data loss (daily snapshots)
+- Replica: near real-time replication means RPO ≈ 0 for read-replica-driven failover
+
+##### RTO (Recovery Time Objective):
+
+- Backups: Minutes to an hour to restore from snapshots, depending on dataset size
+- Automated Failover: Seconds to promote the read-replica and redirect traffic (plus DNS or application cut-over time)
 
 #### Diagram
 
 ```mermaid
 flowchart LR
-  ProdDB[Production DB] -->|Daily Backup at 03:00 UTC| BP[Backup Plan]
-  BP --> PV[Primary Vault - ap-northeast-1]
-  PV -->|Replicate to DR after 90 days| SV[Secondary Vault - ap-southeast-1]
-  SV -->|Recovery in DR Region| DR[Restore Resources]
+  %% Production Region (ap-northeast-1)
+  subgraph "Prod (ap-northeast-1)"
+    ProdDB[Production DB<br/>aws_db_instance.main]
+    BP[Backup Plan<br/>aws_backup_plan.cross_region]
+    PV[Primary Vault<br/>crm-prod-backup-vault]
+    ProdDB -->|Daily @03:00 UTC| BP
+    BP -->|35 d retention| PV
+    PV -->|Copy after 90 d| SV
+  end
+
+  %% DR Region (ap-southeast-1)
+  subgraph "DR (ap-southeast-1)"
+    SV[Secondary Vault<br/>crm-prod-backup-vault-dr]
+    Replica[Read‐Replica<br/>aws_db_instance.replica]
+    SV -->|Recovery Point| Replica
+    CE[CloudWatch Event<br/>aws_cloudwatch_event_rule]
+    Lambda[Lambda Promote<br/>aws_lambda_function.promote]
+    CE --> Lambda
+    Lambda -->|PromoteReadReplica| Replica
+  end
+
+  %% Flows
+  PV -.-> SV
+  Replica -.->|Promoted on failover| ProdDB
+  ProdDB -->|Replicate| Replica
+
 ```
 
 ---

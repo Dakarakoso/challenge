@@ -100,3 +100,31 @@ variable "pipeline_name" {
   type        = string
   description = "Name prefix for the CodePipeline and related resources"
 }
+
+variable "prefix" {
+  type        = string
+  description = "Resource Prefix"
+}
+
+variable "lambda_code_bucket" {
+  type        = string
+  description = "Bucket containing the Lambda ZIP"
+  default     = "my-deployed-lambda-bucket"
+}
+variable "lambda_code_key" {
+  type        = string
+  description = "Key of the Lambda ZIP in S3"
+  default     = "dr/promote-replica.zip"
+
+
+}
+
+variable "db_instance_class" {
+  description = "RDS instance class (e.g. db.t3.medium)"
+  type        = string
+}
+
+variable "db_sg_ids" {
+  description = "List of security group IDs to attach to the database"
+  type        = list(string)
+}

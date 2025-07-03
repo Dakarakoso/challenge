@@ -33,3 +33,18 @@ variable "db_subnets" {
   description = "Database subnets"
   type        = list(string)
 }
+
+variable "prefix" {
+  type        = string
+  description = "Name prefix for all DB resources"
+}
+
+variable "db_instance_class" {
+  type        = string
+  description = "RDS instance class"
+}
+
+variable "db_sg_ids" {
+  type        = list(string)
+  description = "List of security group IDs for the DB"
+}

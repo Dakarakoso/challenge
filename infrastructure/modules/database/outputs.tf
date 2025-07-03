@@ -13,3 +13,15 @@ output "db_arn" {
   description = "RDS instance ARN"
   value       = aws_db_instance.main.arn
 }
+output "replica_id" {
+  value = aws_db_instance.replica.id
+}
+
+output "replica_arn" {
+  value = aws_db_instance.replica.arn
+}
+
+output "main_id" {
+  value       = aws_db_instance.main.id
+  description = "The ID of the primary RDS instance"
+}

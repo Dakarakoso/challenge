@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    aws = {
+      source                = "hashicorp/aws"
+      configuration_aliases = [aws.dr_region]
+    }
+  }
+}
 resource "aws_db_instance" "main" {
   identifier              = "crm-db"
   engine                  = "postgres"
@@ -23,6 +31,20 @@ resource "aws_db_instance" "main" {
 
   tags = {
     Name = "crm-db"
+  }
+}
+
+resource "aws_db_instance" "replica" {
+  provider               = aws.dr_region
+  identifier             = "${var.prefix}-db-replica"
+  replicate_source_db    = aws_db_instance.main.id
+  instance_class         = var.db_instance_class
+  db_subnet_group_name   = var.db_subnet_group
+  vpc_security_group_ids = var.db_sg_ids
+  publicly_accessible    = false
+  storage_encrypted      = true
+  tags = {
+    Name = "${var.prefix}-db-replica"
   }
 }
 

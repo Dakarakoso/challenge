@@ -27,14 +27,20 @@ module "security" {
 
 module "database" {
   source = "../../modules/database"
-
-  db_subnet_group = module.networking.db_subnet_group
-  db_sg_id        = module.security.db_sg_id
-  db_name         = var.db_name
-  db_username     = var.db_username
-  db_password     = var.db_password
-  kms_key_arn     = module.security.kms_key_arn
-  db_subnets      = module.networking.private_subnets
+  providers = {
+    aws           = aws
+    aws.dr_region = aws.dr_region
+  }
+  prefix            = var.prefix
+  db_instance_class = var.db_instance_class
+  db_sg_ids         = var.db_sg_ids
+  db_subnet_group   = module.networking.db_subnet_group
+  db_sg_id          = module.security.db_sg_id
+  db_name           = var.db_name
+  db_username       = var.db_username
+  db_password       = var.db_password
+  kms_key_arn       = module.security.kms_key_arn
+  db_subnets        = module.networking.private_subnets
 }
 
 module "compute" {
@@ -113,8 +119,19 @@ module "backup" {
   providers = {
     aws.dr_region = aws.dr_region
   }
-  prefix          = "crm-prod"
+  prefix          = var.prefix
   db_instance_arn = module.database.db_arn
   backup_schedule = "cron(0 3 * * ? *)" # 3 AM UTC
 
+}
+
+module "failover" {
+  source = "../../modules/failover"
+
+  prefix           = var.prefix
+  primary_db_id    = module.database.main_id
+  replica_id       = module.database.replica_id
+  replica_arn      = module.database.replica_arn
+  lambda_s3_bucket = var.lambda_code_bucket
+  lambda_s3_key    = var.lambda_code_key
 }
