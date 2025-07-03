@@ -11,8 +11,8 @@ provider "aws" {
 
 # Secondary region
 provider "aws" {
-  alias  = "dr_region"
-  region = var.dr_region
+  alias                       = "dr_region"
+  region                      = var.dr_region
   access_key                  = "mock_access_key"
   secret_key                  = "mock_secret_key"
   skip_credentials_validation = true
