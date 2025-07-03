@@ -135,3 +135,16 @@ module "failover" {
   lambda_s3_bucket = var.lambda_code_bucket
   lambda_s3_key    = var.lambda_code_key
 }
+
+module "cost" {
+  source = "../../modules/cost"
+
+  prefix                   = var.prefix
+  region                   = var.region
+  cur_s3_bucket            = var.cur_s3_bucket
+  alert_email              = var.alarm_email
+  monthly_budget_limit     = var.monthly_budget_limit
+  budget_threshold_amount  = var.budget_threshold_percent
+  anomaly_threshold_amount = var.anomaly_threshold_amount
+
+}

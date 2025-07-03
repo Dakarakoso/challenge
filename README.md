@@ -17,8 +17,6 @@ This repository contains a complete, production-ready AWS infrastructure as code
 
 ## Architecture Diagram
 
-Below is a high-level view of the AWS infrastructure:
-
 ```mermaid
 graph TD
   %% CI/CD Pipeline
@@ -26,7 +24,7 @@ graph TD
     GH[GitHub Repo] --> CSC[CodeStar Connection]
     CSC --> CP[CodePipeline]
     CP --> CB[CodeBuild]
-    CB --> ECR[ECR Server and Worker]
+    CB --> ECR[ECR Server & Worker]
     CP --> CD[CodeDeploy - Blue/Green Auto-Rollback on Alarm]
   end
 
@@ -42,12 +40,12 @@ graph TD
         IGW[Internet Gateway]
         NAT[NAT Gateway]
         IGW <--> NAT
-        ALB[Application Load Balancer] --> ECS_Public[ECS Cluster Fargate]
+        ALB[Application Load Balancer] --> ECS_Public[ECS Fargate]
       end
 
       subgraph Private_Subnets
-        ECS_Private[ECS Cluster Fargate] --> RDS_Primary[RDS Primary]
-        ECS_Private --> S3[S3 Attachments]
+        ECS_Private[ECS Fargate] --> RDS_Primary[RDS Primary]
+        ECS_Private --> S3_Attach[S3 Attachments]
         ECS_Private --> NAT
       end
     end
@@ -60,19 +58,20 @@ graph TD
   subgraph "DR Region ap-southeast-1"
     RDS_Replica[RDS Read Replica]
     RDS_Primary -->|Async Replication| RDS_Replica
-    CW_Event[CloudWatch Events - failover] --> Lambda[Lambda PromoteReplica]
+    CW_Event[CloudWatch Events failover] --> Lambda[Lambda PromoteReplica]
     Lambda --> RDS_Replica
-    RDS_Replica -->|DNS Update / App Pointing| ECS_Public
+    RDS_Replica -->|DNS Failover| ECS_Public
   end
 
-  %% Backup & Monitoring
+  %% Backup
   subgraph Backup
     AWSB[AWS Backup] --> PV[Primary Vault]
     PV -.-> DRV[DR Vault]
     RDS_Primary --> AWSB
-    S3 --> AWSB
+    S3_Attach --> AWSB
   end
 
+  %% Monitoring
   subgraph Monitoring
     CW[CloudWatch Alarms] --> SNS[SNS Alerts]
     CW --> CD
@@ -83,15 +82,26 @@ graph TD
     RDS_Replica --> CW
   end
 
+  %% Cost Management
+  subgraph Cost
+    CURBucket[S3 CUR Bucket]
+    CURBucket --> CURDef[CUR Report Definition]
+    Budget[AWS Budget] --> SNSCost[SNS Cost Alerts]
+    AnomalyRule[EventBridge Cost Anomaly Rule] --> SNSCost
+    CURDef --> CostExplorer["Cost Explorer UI"]
+  end
+
   %% Security
   subgraph Security
     IAM[IAM Roles & Policies] -.-> CB
     IAM -.-> ECS_Public
     IAM -.-> ECS_Private
     IAM -.-> RDS_Primary
-    KMS[KMS Key] -.-> S3
+    KMS[KMS Key] -.-> S3_Attach
     WAF[WAFv2 Web ACL] --> ALB
   end
+
+
 
 ```
 
@@ -214,9 +224,12 @@ Automates build, approval, and deployment of Dockerized app:
 - ECR Repositories (`aws_ecr_repository.server` & `aws_ecr_repository.worker`), IAM roles/policies, and an S3 bucket crm-deployment-artifacts
   - ECR repos twenty-server and twenty-worker with image-scanning on push
 - CodeDeploy Application & Deployment Group
+
   - Configured for Blue/Green with one-at-a-time traffic shifting
   - `auto_rollback_configuration` enabled on both DEPLOYMENT_FAILURE and DEPLOYMENT_STOP_ON_ALARM
   - Specifies `blue_green_deployment_config` for traffic control and automatic termination of the old (blue) instances on success
+
+  ***
 
 ## Compute
 
@@ -306,6 +319,16 @@ Holds user-uploaded attachments:
 - Transition to STANDARD_IA after 30 days, GLACIER after 90 days.
 - Abort incomplete multipart uploads.
 - Public Access Block (all blocked), Server-side Encryption with KMS, and Versioning enabled.
+
+---
+
+## Cost Management
+
+- CUR Bucket stores your daily cost reports.
+- CUR Report Definition tells AWS to drop CSVs/GZIP into that bucket.
+- AWS Budget monitors monthly spend in JPY and alerts via SNS.
+- EventBridge Cost Anomaly Rule catches spikes from Cost Explorer and forwards to the same SNS topic.
+- Cost Explorer UI lets you do detailed analysis of the CUR files.
 
 ---
 

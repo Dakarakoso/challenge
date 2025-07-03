@@ -128,3 +128,26 @@ variable "db_sg_ids" {
   description = "List of security group IDs to attach to the database"
   type        = list(string)
 }
+variable "monthly_budget_limit" {
+  description = "Monthly budget limit in JPY"
+  type        = number
+  default     = 1000000
+}
+
+variable "budget_threshold_percent" {
+  description = "Percent of budget at which to alert"
+  type        = number
+  default     = 80
+}
+
+variable "anomaly_threshold_amount" {
+  description = "Absolute yen threshold for cost anomaly alerts"
+  type        = number
+  default     = 50000
+}
+
+variable "cur_s3_bucket" {
+  description = "Name of the S3 bucket to receive CUR files"
+  type        = string
+  default     = "my-crm-cur-bucket"
+}
