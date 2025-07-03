@@ -144,16 +144,24 @@ flowchart LR
 
 Automates build, approval, and deployment of Dockerized app:
 
-- CodeBuild Project (aws_codebuild_project.build):
-  - Uses aws/codebuild/standard:6.0 with privileged mode.
-  - Caches both Git source and Docker image layers (LOCAL_SOURCE_CACHE, LOCAL_DOCKER_LAYER_CACHE).
-  - Buildspec logs into ECR, builds twenty-server & twenty-worker, pushes images, and writes imagedefinitions.json .
-- CodeStar Connection to GitHub (aws_codestarconnections_connection.github).
-- CodePipeline (aws_codepipeline.crm): Four stages—Source, Build, ManualApproval, Blue/Green Deploy via CodeDeploy.
-- ECR Repositories (aws_ecr_repository.server & worker), IAM roles/policies, and an S3 bucket crm-deployment-artifacts for artifacts.
-- CodeDeploy Application & Deployment Group: Blue/green strategy with one-at-a-time deployment and automatic rollback on failure.
+- CodeBuild Project (aws_codebuild_project.build)
 
----
+  - Uses aws/codebuild/standard:6.0 with privileged_mode = true
+  - Caches both Git source and Docker image layers (LOCAL_SOURCE_CACHE, LOCAL_DOCKER_LAYER_CACHE)
+  - Buildspec logs into ECR, builds twenty-server & twenty-worker, pushes images, and writes imagedefinitions.json
+
+- CodeStar Connection to GitHub (aws_codestarconnections_connection.github)
+- CodePipeline (aws_codepipeline.crm) – Four stages:
+  - Source: pulls from GitHub via CodeStarSourceConnection
+  - Build: runs the CodeBuild project
+  - ManualApproval: pauses for human review
+  - Deploy: performs a Blue/Green deployment via CodeDeploy
+- ECR Repositories (`aws_ecr_repository.server` & `aws_ecr_repository.worker`), IAM roles/policies, and an S3 bucket crm-deployment-artifacts
+  - ECR repos twenty-server and twenty-worker with image-scanning on push
+- CodeDeploy Application & Deployment Group
+  - Configured for Blue/Green with one-at-a-time traffic shifting
+  - `auto_rollback_configuration` enabled on both DEPLOYMENT_FAILURE and DEPLOYMENT_STOP_ON_ALARM
+  - Specifies `blue_green_deployment_config` for traffic control and automatic termination of the old (blue) instances on success
 
 ## Compute
 
