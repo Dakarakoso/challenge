@@ -107,14 +107,15 @@ graph TD
 
 ## Modules
 
-- networking: VPC, subnets, ALB, NAT/IGW, flow-logs
-- security: IAM roles & policies, KMS, WAF, Secrets Manager
-- database: RDS PostgreSQL, parameter group, subnet group
-- compute: ECS cluster, services, task definitions, autoscaling
-- storage: S3 bucket for attachments + lifecycle, encryption, versioning
-- ci_cd: CodeBuild, CodePipeline, ECR repos
-- monitoring: CloudWatch alarms, SNS topic/subscription
-- backup: AWS Backup plans & vaults
+- networking: VPC (10.0.0.0/16), public & private subnets, Internet Gateway, NAT Gateways, route tables, VPC Flow Logs
+- security: IAM roles & policies (CodeBuild, CodePipeline, Backup, Lambda, ECS, etc.), KMS key, WAFv2 Web ACL, Secrets Manager (DB & app secrets)
+- database: RDS PostgreSQL primary (Multi-AZ, backups, parameter group, subnet group), cross-region read replica, module outputs (IDs/ARNs)
+- compute: ECS Fargate cluster, task definitions (server & worker), ECS services (public & internal), autoscaling policies, CloudWatch log groups
+- storage: S3 bucket for attachments (versioning, server-side encryption with KMS), lifecycle rules (STANDARD_IA & GLACIER transitions, multipart cleanup)
+- ci_cd: CodeBuild project (Docker build with source & layer caching), ECR repositories (server & worker), CodePipeline (Source → Build → Manual Approval → Deploy), CodeDeploy Blue/Green with auto-rollback on alarms
+- monitoring: CloudWatch metric alarms (ALB 5XX, ECS CPU & memory, RDS CPU, backup failures), SNS topic & email subscription, integration with CodeDeploy rollback
+- backup: AWS Backup plan (daily schedule, 35-day primary retention), backup vaults (primary in ap-northeast-1, DR in ap-southeast-1), backup selection for RDS, IAM role for AWS Backup
+- failover: CloudWatch Event rule detecting RDS failover, Lambda function to call PromoteReadReplica, IAM role & policy for Lambda, CloudWatch Event → Lambda target and permission configuration
 
 ### Terraform dependency graph
 
