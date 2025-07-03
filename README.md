@@ -1,4 +1,4 @@
-# Cloud Platform Engineer @ Resola.ai
+# Cloud Platform Engineer @ 
 
 ![CI Terraform](https://github.com/Dakarakoso/challenge/actions/workflows/terraform.yaml/badge.svg)
 
