@@ -90,3 +90,8 @@ variable "secret_key" {
   type    = string
   default = "mock_secret_key"
 }
+
+variable "dr_region" {
+  description = "Disaster recovery region"
+  type        = string
+}

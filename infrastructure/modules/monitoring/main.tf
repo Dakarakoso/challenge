@@ -82,3 +82,20 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
     Name = "crm-flow-logs"
   }
 }
+
+resource "aws_cloudwatch_metric_alarm" "backup_failure" {
+  alarm_name          = "${var.prefix}-backup-failure"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "NumberOfBackupJobsFailed"
+  namespace           = "AWS/Backup"
+  period              = 86400 # 24 hours
+  statistic           = "Sum"
+  threshold           = 0
+  alarm_description   = "Detects failed backup jobs"
+  alarm_actions       = [aws_sns_topic.alarms.arn]
+
+  dimensions = {
+    BackupVaultName = "${var.prefix}-backup-vault"
+  }
+}

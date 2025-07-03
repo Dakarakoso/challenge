@@ -22,3 +22,8 @@ variable "alarm_email" {
   description = "Email for alarm notifications"
   type        = string
 }
+
+variable "prefix" {
+  description = "Resource name prefix"
+  type        = string
+}

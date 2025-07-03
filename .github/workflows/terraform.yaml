@@ -23,6 +23,7 @@ jobs:
       TF_VAR_pgpassword_value: ${{ secrets.PGPASSWORD_VALUE }}
       TF_VAR_app_secret_value: ${{ secrets.APP_SECRET_VALUE }}
       TF_VAR_alarm_email: ${{ secrets.ALARM_EMAIL }}
+      TF_VAR_dr_region: ${{secrets.DR_REGION}}
 
     steps:
       - uses: actions/checkout@v3

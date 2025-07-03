@@ -1,30 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "6.0.0"
-    }
-  }
-
-  # backend "s3" {
-  #   profile    = "twentyhq"
-  #   region     = "ap-northeast-1"
-  #   key        = "terraform.tfstate"
-  #   encrypt    = true
-  #   kms_key_id = "alias/production-terraform-state"
-  # }ter
-}
-
-provider "aws" {
-  region = var.region
-  # profile = "twentyhq"
-  access_key                  = "mock_access_key"
-  secret_key                  = "mock_secret_key"
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
-}
-
 
 module "networking" {
   source = "../../modules/networking"
@@ -122,4 +95,17 @@ module "monitoring" {
   db_instance_id   = module.database.db_instance_id
   alb_arn_suffix   = split("/", module.networking.alb_target_group_arn)[1]
   alarm_email      = var.alarm_email
+  prefix           = "crm-prod"
+}
+
+module "backup" {
+  source = "../../modules/backup"
+
+  providers = {
+    aws.dr_region = aws.dr_region
+  }
+  prefix          = "crm-prod"
+  db_instance_arn = module.database.db_arn
+  backup_schedule = "cron(0 3 * * ? *)" # 3 AM UTC
+
 }
