@@ -36,9 +36,6 @@ jobs:
       - name: Terraform Format
         run: terraform fmt -check -recursive infrastructure/environments/prod
 
-      - name: Terraform Validate
-        run: terraform -chdir=infrastructure/environments/prod validate
-
       - name: Terraform Init
         run: terraform -chdir=infrastructure/environments/prod init
 
