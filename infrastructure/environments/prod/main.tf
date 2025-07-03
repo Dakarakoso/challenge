@@ -68,14 +68,17 @@ module "storage" {
 }
 
 module "ci_cd" {
-  source             = "../../modules/ci_cd"
-  repository_name    = "crm-app"
-  build_project_name = "crm-build"
-  pipeline_name      = "crm-deployment"
-  ecs_cluster_name   = module.compute.cluster_name
-  ecs_service_name   = module.compute.server_service_name
-  account_id         = var.account_id
-  region             = var.region
+  source                  = "../../modules/ci_cd"
+  repository_name         = "crm-app"
+  build_project_name      = "crm-build"
+  pipeline_name           = "crm-deployment"
+  ecs_cluster_name        = module.compute.cluster_name
+  ecs_service_name        = module.compute.server_service_name
+  account_id              = var.account_id
+  region                  = var.region
+  alb_listener_arn        = module.networking.alb_listener_arn
+  blue_target_group_name  = module.networking.blue_target_group_name
+  green_target_group_name = module.networking.green_target_group_name
 }
 
 

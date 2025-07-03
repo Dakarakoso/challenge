@@ -25,3 +25,28 @@ output "alb_target_group_arn" {
 output "db_subnet_group" {
   value = aws_db_subnet_group.db.name
 }
+
+output "alb_listener_arn" {
+  description = "ARN of the HTTPS listener"
+  value       = aws_alb_listener.https.arn
+}
+
+output "blue_target_group_name" {
+  description = "Name of the blue ECS target group"
+  value       = aws_alb_target_group.main.name
+}
+
+output "green_target_group_name" {
+  description = "Name of the green ECS target group"
+  value       = aws_alb_target_group.green.name
+}
+
+output "blue_target_group_arn" {
+  description = "ARN of the ‘blue’ target group"
+  value       = aws_alb_target_group.main.arn
+}
+
+output "green_target_group_arn" {
+  description = "ARN of the ‘green’ target group"
+  value       = aws_alb_target_group.green.arn
+}

@@ -48,6 +48,10 @@ resource "aws_codebuild_project" "build" {
       value = var.region
     }
   }
+  cache {
+    type  = "LOCAL"
+    modes = ["LOCAL_SOURCE_CACHE", "LOCAL_DOCKER_LAYER_CACHE"]
+  }
 
   source {
     type      = "CODEPIPELINE"
@@ -103,20 +107,33 @@ resource "aws_codepipeline" "crm" {
   }
 
   stage {
+    name = "Approve"
+
+    action {
+      name      = "ManualApproval"
+      category  = "Approval"
+      owner     = "AWS"
+      provider  = "Manual"
+      version   = "1"
+      run_order = 1
+    }
+  }
+
+  stage {
     name = "Deploy"
 
     action {
-      name            = "Deploy"
+      name            = "BlueGreenDeploy"
       category        = "Deploy"
       owner           = "AWS"
-      provider        = "ECS"
+      provider        = "CodeDeploy"
       input_artifacts = ["build_output"]
       version         = "1"
 
       configuration = {
-        ClusterName = var.ecs_cluster_name
-        ServiceName = var.ecs_service_name
-        FileName    = "imagedefinitions.json"
+        ApplicationName     = aws_codedeploy_app.ecs.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.ecs.deployment_group_name
+        FileExistsBehavior  = "OVERWRITE"
       }
     }
   }

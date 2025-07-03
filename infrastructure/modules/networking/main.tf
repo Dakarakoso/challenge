@@ -129,6 +129,27 @@ resource "aws_alb_target_group" "main" {
   }
 }
 
+resource "aws_alb_target_group" "green" {
+  name        = "crm-tg-green"
+  port        = 3000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/health"
+    interval            = 30
+    timeout             = 10
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    matcher             = "200"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_security_group" "alb" {
   name        = "crm-alb-sg"
   description = "Allow HTTP/HTTPS traffic to ALB"
