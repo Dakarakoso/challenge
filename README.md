@@ -60,7 +60,7 @@ This repository contains a complete, production-ready AWS infrastructure as code
   - build: build Docker images for server & worker
   - post_build: push images to ECR and generate imagedefinitions.json for ECS deploy
 
-- Pipeline Stages: Source (CodeCommit) → Build (CodeBuild) → Deploy (ECS)
+- Pipeline Stages: Source (Github) → Build (CodeBuild) → Deploy (ECS)
 
 - Formatting, linting, or validation failures will break the build badge above.
 
