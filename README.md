@@ -1,6 +1,32 @@
-# Cloud Platform Engineer @
+# Cloud Platform Engineer
 
 ![CI Terraform](https://github.com/Dakarakoso/challenge/actions/workflows/terraform.yaml/badge.svg)
+
+## Index
+
+1. [Overview](#overview)
+2. [Documentation](#documentation)
+3. [Architecture Diagram](#architecture-diagram)
+4. [Prerequisites](#prerequisites)
+5. [Modules](#modules)
+6. [Terraform dependency graph](#terraform-dependency-graph)
+7. [Backup & DR Orchestration](#backup--dr-orchestration)
+   - [Cross-Region Backups](#cross-region-backups)
+   - [Near-Real-Time Replication](#near-real-time-replication)
+   - [Automated Failover](#automated-failover)
+   - [RPO/RTO Considerations](#rporto-considerations)
+   - [Diagram](#diagram)
+8. [CI/CD](#cicd)
+9. [Compute](#compute)
+10. [Database](#database)
+11. [Edge](#edge)
+12. [Monitoring](#monitoring)
+13. [Networking](#networking)
+14. [Security](#security)
+15. [Storage](#storage)
+16. [Cost Management](#cost-management)
+17. [Getting Started](#getting-started)
+18. [Next steps](#next-steps)
 
 ## Overview
 
@@ -12,6 +38,12 @@ This repository contains a complete, production-ready AWS infrastructure as code
 - **Observability & Alerting** with CloudWatch dashboards and alarms
 - **Backup & DR** using AWS Backup with cross-region copy
 - **Cost & Security Best Practices** aligned to the AWS Well-Architected framework
+
+---
+
+## Documentation
+
+- [Emergency Recovery Guide](docs/emergency-recovery.md)
 
 ---
 
@@ -130,7 +162,9 @@ graph TD
 
 ### Terraform dependency graph
 
-## ![Terraform Dependency Graph](/imgs/terraform-graph.png)
+## ![Terraform Dependency Graph](docs//imgs/terraform-graph.png)
+
+---
 
 ## Backup & DR Orchestration
 
@@ -437,6 +471,7 @@ aws secretsmanager delete-secret \
 
 ## Next steps
 
+- add a performance test(could be using k6)
 - Container image vulnerability scanning
 - Secrets rotation and dynamic secret
 - Distributed tracing (AWS X-Ray) for end-to-end request visibility
