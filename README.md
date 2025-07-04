@@ -44,6 +44,17 @@ This repository contains a complete, production-ready AWS infrastructure as code
 ## Documentation
 
 - [Emergency Recovery Guide](docs/emergency-recovery.md)
+- [Backup Module](infrastructure/modules/backup/README.md)
+- [CI/CD Module](infrastructure/modules/ci_cd/README.md)
+- [Compute Module](infrastructure/modules/compute/README.md)
+- [Cost Module](infrastructure/modules/cost/README.md)
+- [Database Module](infrastructure/modules/database/README.md)
+- [Edge Module](infrastructure/modules/edge/README.md)
+- [Failover Module](infrastructure/modules/failover/README.md)
+- [Monitoring Module](infrastructure/modules/monitoring/README.md)
+- [Networking Module](infrastructure/modules/networking/README.md)
+- [Security Module](infrastructure/modules/security/README.md)
+- [Storage Module](infrastructure/modules/storage/README.md)
 
 ---
 
