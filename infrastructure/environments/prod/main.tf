@@ -1,3 +1,31 @@
+# Hardcoded values Terraform plan/apply works without real AWS credentials or live SSM/Secrets Manager entries.
+
+# data "aws_ssm_parameter" "domain_name" {
+#   name = var.domain_name
+# }
+
+# data "aws_ssm_parameter" "cert_arn" {
+#   name = var.acm_certificate_arn
+# }
+
+# data "aws_ssm_parameter" "alert_email" {
+#   name = var.alarm_email
+# }
+
+# data "aws_secretsmanager_secret_version" "db_creds" {
+#   secret_id = var.db_password
+# }
+# locals {
+#   db_creds = jsondecode(data.aws_secretsmanager_secret_version.db_creds.secret_string)
+# }
+
+# data "aws_secretsmanager_secret_version" "app_secret" {
+#   secret_id = var.app_secret_value
+# }
+
+# data "aws_secretsmanager_secret_version" "pg_super" {
+#   secret_id = var.pgpassword_value
+# }
 
 module "networking" {
   source = "../../modules/networking"
@@ -23,6 +51,15 @@ module "security" {
   app_secret_value      = var.app_secret_value
   pgpassword_secret_arn = var.pgpassword_secret_arn
   app_secret_arn        = var.app_secret_arn
+  app_initial_secret    = var.app_initial_secret
+  db_initial_password   = var.db_initial_password
+  pg_initial_password   = var.pg_initial_password
+  domain_name           = var.domain_name
+  db_username           = var.db_username
+  db_password           = var.db_password
+  region                = var.region
+  alarm_email           = var.alarm_email
+  acm_certificate_arn   = var.acm_certificate_arn
 }
 
 module "database" {

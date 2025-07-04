@@ -39,3 +39,51 @@ variable "app_secret_arn" {
   description = "App secret ARN"
   type        = string
 }
+
+variable "domain_name" {
+  description = "SSM Parameter path for the public domain name"
+  type        = string
+}
+
+variable "acm_certificate_arn" {
+  description = "SSM Parameter path for the ACM certificate ARN"
+  type        = string
+}
+
+variable "region" {
+  type = string
+}
+
+variable "alarm_email" {
+  description = "SSM Parameter path for the alert email address"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Secrets Manager secret ID for DB master credentials"
+  type        = string
+}
+
+variable "db_username" {
+  type = string
+}
+
+
+# Initial secret values (sensitive)
+variable "db_initial_password" {
+  description = "Initial DB master password (used once to bootstrap the secret)"
+  type        = string
+  sensitive   = true
+}
+
+variable "app_initial_secret" {
+  description = "Initial application secret (bootstrap value)"
+  type        = string
+  sensitive   = true
+}
+
+variable "pg_initial_password" {
+  description = "Initial Postgres superuser password (bootstrap value)"
+  type        = string
+  sensitive   = true
+}

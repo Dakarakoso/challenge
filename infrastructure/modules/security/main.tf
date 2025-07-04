@@ -242,3 +242,45 @@ resource "aws_iam_role_policy" "vpc_flow_logs" {
     ]
   })
 }
+
+#SSM Parameters
+resource "aws_ssm_parameter" "domain_name" {
+  name  = var.domain_name
+  type  = "String"
+  value = var.domain_name
+}
+
+resource "aws_ssm_parameter" "cert_arn" {
+  name  = var.acm_certificate_arn
+  type  = "String"
+  value = "arn:aws:acm:${var.region}:${var.account_id}:certificate/abcd1234"
+}
+
+resource "aws_ssm_parameter" "alert_email" {
+  name  = var.alarm_email
+  type  = "String"
+  value = "alerts@example.com"
+}
+
+#  Secrets Manager: DB credentials 
+resource "aws_secretsmanager_secret" "db_creds" {
+  name = var.db_password
+}
+
+resource "aws_secretsmanager_secret_version" "db_creds" {
+  secret_id = aws_secretsmanager_secret.db_creds.id
+  secret_string = jsonencode({
+    username = var.db_username
+    password = var.db_initial_password
+  })
+}
+
+# ──── Secrets Manager: Postgres superuser ────
+resource "aws_secretsmanager_secret" "pg_super" {
+  name = var.pgpassword_value
+}
+
+resource "aws_secretsmanager_secret_version" "pg_super" {
+  secret_id     = aws_secretsmanager_secret.pg_super.id
+  secret_string = var.pg_initial_password
+}

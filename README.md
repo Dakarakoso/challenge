@@ -100,32 +100,33 @@ graph TD
     KMS[KMS Key] -.-> S3_Attach
     WAF[WAFv2 Web ACL] --> ALB
   end
-
-
-
 ```
 
 ---
 
 ## Prerequisites
 
-- [Terraform 1.5+](https://www.terraform.io/downloads.html) (tested with **Terraform v1.12.2** on darwin_arm64)
-- AWS CLI configured with credentials/profile that has IAM, EC2, RDS, S3, ECS, CloudWatch, Backup, CloudFront, Route 53, WAF permissions
-- (Optional) [terraform-docs](https://github.com/terraform-docs/terraform-docs) for local module docs
+- AWS CLI installed and configured with credentials or an IAM profile that can:
+  - create SSM parameters
+  - create Secrets Manager secrets
+  - deploy IAM, VPC, RDS, ECS, CodeBuild/CodePipeline, CloudFront, etc.
+- Terraform v1.3+ installed
+- Git installed
 
 ---
 
 ## Modules
 
-- networking: VPC (10.0.0.0/16), public & private subnets, Internet Gateway, NAT Gateways, route tables, VPC Flow Logs
-- security: IAM roles & policies (CodeBuild, CodePipeline, Backup, Lambda, ECS, etc.), KMS key, WAFv2 Web ACL, Secrets Manager (DB & app secrets)
-- database: RDS PostgreSQL primary (Multi-AZ, backups, parameter group, subnet group), cross-region read replica, module outputs (IDs/ARNs)
-- compute: ECS Fargate cluster, task definitions (server & worker), ECS services (public & internal), autoscaling policies, CloudWatch log groups
-- storage: S3 bucket for attachments (versioning, server-side encryption with KMS), lifecycle rules (STANDARD_IA & GLACIER transitions, multipart cleanup)
-- ci_cd: CodeBuild project (Docker build with source & layer caching), ECR repositories (server & worker), CodePipeline (Source → Build → Manual Approval → Deploy), CodeDeploy Blue/Green with auto-rollback on alarms
-- monitoring: CloudWatch metric alarms (ALB 5XX, ECS CPU & memory, RDS CPU, backup failures), SNS topic & email subscription, integration with CodeDeploy rollback
-- backup: AWS Backup plan (daily schedule, 35-day primary retention), backup vaults (primary in ap-northeast-1, DR in ap-southeast-1), backup selection for RDS, IAM role for AWS Backup
-- failover: CloudWatch Event rule detecting RDS failover, Lambda function to call PromoteReadReplica, IAM role & policy for Lambda, CloudWatch Event → Lambda target and permission configuration
+- **networking:** VPC 10.0.0.0/16 with public/private subnets (10.0.1.0/24–10.0.4.0/24), IGW, NAT gateways, public/private route tables, VPC Flow Logs, and ALB with HTTP/HTTPS listeners.
+- **security:** IAM roles & policies for CodeBuild/CodePipeline/Backup/Lambda/ECS, KMS key for S3, WAFv2 Web ACL on ALB, and Secrets Manager secrets for DB & app.
+- **database:** Multi-AZ RDS PostgreSQL primary (db.t3.medium) with parameter/subnet groups & 7-day backups, plus a cross-region read replica in ap-southeast-1.
+- **compute:** ECS Fargate cluster with server (512 CPU/1 GB) & worker (256 CPU/512 MB) task definitions, services (public & internal), CPU autoscaling, and CloudWatch log groups.
+- **storage:** S3 bucket for attachments with separate aws_s3_bucket_versioning & lifecycle rules (expire 365 days), SSE-KMS encryption using the module’s KMS key.
+- **ci_cd:** ECR repos (server & worker) with scan-on-push, CodeBuild project (Docker build + local cache), CodePipeline (Source → Build → Manual Approval → Deploy), and CodeDeploy Blue/Green with auto-rollback on alarms.
+- **monitoring:** CloudWatch metric alarms for ALB 5XX, ECS CPU & memory, RDS CPU, backup failures; SNS topic/email subscription; alarms integrated with CodeDeploy for auto-rollback.
+- **backup:** AWS Backup cross-region plan (daily @ 03:00 UTC, 35-day primary retention, copy after 90 days to DR vault), vaults in ap-northeast-1 & ap-southeast-1, RDS selection, and Backup service IAM role.
+- **failover:** EventBridge rule detecting RDS failover events, Lambda function to promote read replica, CloudWatch Events → Lambda target & permission, and IAM policy allowing rds:PromoteReadReplica.
+- **cost:** S3 CUR bucket & report definition, AWS Budget (1 000 000 JPY @ 80% threshold) with SNS alerts, and EventBridge cost anomaly rule forwarding to the same SNS topic.
 
 ### Terraform dependency graph
 
@@ -304,7 +305,10 @@ IAM, encryption, and WAF to protect data and app:
 - ECS Exec & Task roles, VPC Flow Logs role, Backup role.
 - Inline & managed policies attached appropriately.
 - KMS Key for encrypting Secrets and S3 objects, with rotation enabled.
-- Secrets Manager: Two secrets—App secret & DB superuser password, each with a version object.
+- Secrets Manager:
+  - `/crm/prod/db_master_credentials` (DB user/pass)
+  - `/crm/prod/app_secret` (application secret)
+  - `/crm/prod/pg_superuser_password` (Postgres superuser)
 - Security Groups for ECS tasks (port 3000) and RDS (port 5432).
 - WAFv2 Web ACL “crm-web-acl” using AWS Managed Rules (Common Rule Set).
 
@@ -324,11 +328,11 @@ Holds user-uploaded attachments:
 
 ## Cost Management
 
-- CUR Bucket stores your daily cost reports.
-- CUR Report Definition tells AWS to drop CSVs/GZIP into that bucket.
-- AWS Budget monitors monthly spend in JPY and alerts via SNS.
-- EventBridge Cost Anomaly Rule catches spikes from Cost Explorer and forwards to the same SNS topic.
-- Cost Explorer UI lets you do detailed analysis of the CUR files.
+- **CUR**: bucket `my-crm-cur-bucket`, report `crm-prod-daily-cur` → GZIP CSV in `cur-reports/`
+- **Budget**: `crm-prod-monthly-budget`
+  - Limit: 1 000 000 JPY; alert at 80% → SNS `crm-prod-cost-alerts`
+- **Anomaly Detection**: EventBridge rule `crm-prod-cost-anomaly-rule` → SNS `crm-prod-cost-alerts`
+- **SNS Policy**: allows `events.amazonaws.com` to publish
 
 ---
 
@@ -341,33 +345,99 @@ Holds user-uploaded attachments:
     cd challenge
     ```
 
-2.  **Review Terraform modules**
-    Each module in infrastructure/modules/ has its own `variables.tf`, `outputs.tf`, and `README.md` (you can generate/update via terraform-docs).
+2.  **Bootstrap SSM & Secrets Manager (only once)**
 
-3.  **Initialize & Plan (prod)**
+> If you don’t want to hit AWS, skip to step 3 and use the hard-coded values in `main.tf`.
 
-    ```bash
-    cd infrastructure/environments/prod
-    terraform init
-    terraform plan -out=tfplan
-    ```
+Otherwise, run these AWS CLI commands to create the parameter store entries and secrets your code expects:
 
-4.  **Apply**
-    ```bash
-    terraform apply "tfplan"
-    ```
-5.  **Cleanup**
-    ```bash
-    terraform destroy
-    ```
+```bash
+# 1) SSM parameters
+aws ssm put-parameter --name "/crm/prod/domain_name"           --type String --value "crm.example.com"
+aws ssm put-parameter --name "/crm/prod/acm_certificate_arn"  --type String --value "arn:aws:acm:ap-northeast-1:123456789012:certificate/abcd1234"
+aws ssm put-parameter --name "/crm/ops/alert_email"           --type String --value "alerts@example.com"
+
+# 2) Secrets Manager secrets
+aws secretsmanager create-secret --name "/crm/prod/db_master_credentials" \
+    --secret-string '{"username":"twenty_admin","password":"secure_db_password"}'
+aws secretsmanager create-secret --name "/crm/prod/app_secret" \
+    --secret-string "32_char_long_random_string"
+aws secretsmanager create-secret --name "/crm/prod/pg_superuser_password" \
+    --secret-string "secure_superuser_password"
+```
+
+3. **Prepare your terraform.tfvars**
+   In `environments/prod/terraform.tfvars` fill in only the paths/ARNs (not the literal values):
+
+```hcl
+domain_name           = "/crm/prod/domain_name"
+acm_certificate_arn   = "/crm/prod/acm_certificate_arn"
+alarm_email           = "/crm/ops/alert_email"
+
+db_password           = "/crm/prod/db_master_credentials"
+app_secret_value      = "/crm/prod/app_secret"
+pgpassword_value      = "/crm/prod/pg_superuser_password"
+```
+
+> If you’re ignoring live SSM/Secrets and using hard-coded values in the code, instead set these to the actual values:
+
+```hcl
+  domain_name           = "crm.example.com"
+  acm_certificate_arn   = "arn:aws:acm:…"
+  alarm_email           = "alerts@example.com"
+  db_password           = "secure_db_password"
+  app_secret_value      = "32_char_long_random_string"
+  pgpassword_value      = "secure_superuser_password"
+```
+
+4. **Initialize and validate**
+
+```bash
+terraform init
+terraform validate
+```
+
+5. **Preview and apply**
+
+```bash
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+6. **(Optional) Tear down**
+
+```bash
+terraform destroy -auto-approve
+```
+
+> manually delete SSM parameters or secrets if needed or use the cli:
+
+```bash
+aws ssm delete-parameters \
+  --names "/crm/prod/domain_name" \
+           "/crm/prod/acm_certificate_arn" \
+           "/crm/ops/alert_email"
+
+aws secretsmanager delete-secret \
+  --secret-id "/crm/prod/db_master_credentials" \
+  --force-delete-without-recovery
+
+aws secretsmanager delete-secret \
+  --secret-id "/crm/prod/app_secret" \
+  --force-delete-without-recovery
+
+aws secretsmanager delete-secret \
+  --secret-id "/crm/prod/pg_superuser_password" \
+  --force-delete-without-recovery
+```
+
+> Note: If you prefer to keep the standard 30-day recovery window (in case of accidental deletion), omit the --force-delete-without-recovery flag.
 
 ---
 
 ## Next steps
 
-- Remote state locking/encryption in S3+DynamoDB
 - Container image vulnerability scanning
 - Secrets rotation and dynamic secret
 - Distributed tracing (AWS X-Ray) for end-to-end request visibility
 - caching layers (ElastiCache Redis) for session state
-- Tagging strategy & resource naming conventions for cost/accountability
