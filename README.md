@@ -173,24 +173,24 @@ graph TD
 - Backup Plan `aws_backup_plan.cross_region`
   - Runs daily at 03:00 UTC, retaining each recovery point for 35 days in the primary vault, and then automatically copying it to the DR vault after a 90-day window.
 - Backup Selection `aws_backup_selection.rds`
-  - Includes your primary RDS instance in the plan so that every snapshot is captured.
+  - Includes primary RDS instance in the plan so that every snapshot is captured.
 - Backup Vaults
   - Primary Vault `aws_backup_vault.primary`: crm-prod-backup-vault in ap-northeast-1
 - DR Vault `aws_backup_vault.secondary`: crm-prod-backup-vault-dr in ap-southeast-1
 - IAM Role & Policy `aws_iam_role.backup_role` + attachment
-  - Grants AWS Backup service the permissions it needs to snapshot and copy your data.
+  - Grants AWS Backup service the permissions it needs to snapshot and copy data.
 
 #### Near-Real-Time Replication
 
 - **Read-Replica** `aws_db_instance.replica`
-  - A cross-region RDS read-replica in ap-southeast-1 that continuously replicates from your primary database, giving you an RPO of near zero for failover scenarios.
+  - A cross-region RDS read-replica in ap-southeast-1 that continuously replicates from primary database, giving an RPO of near zero for failover scenarios.
 
 #### Automated Failover
 
 - CloudWatch Event Rule `aws_cloudwatch_event_rule.rds_failover`
-  - Listens for RDS “failover” events on your primary instance.
+  - Listens for RDS “failover” events on primary instance.
 - Lambda Promotion Function `aws_lambda_function.promote`
-  - Automatically invokes the RDS PromoteReadReplica API on your replica when the event fires, turning it into a standalone primary.
+  - Automatically invokes the RDS PromoteReadReplica API on replica when the event fires, turning it into a standalone primary.
 - IAM Role & Policy
   - Allows the Lambda function to call `rds:PromoteReadReplica` on the replica ARN.
 
